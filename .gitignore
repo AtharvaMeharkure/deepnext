@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment files
+.env
+.env.*
+!*.example
+
+# Datasets and heavy files
+archive*/
+*.csv
+*.joblib
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.jpg
+*.jpeg
+*.png
+
+# Backend models and stores
+backend/models/
+backend/store/
+backend/uploads/
+
+# IDE files
+.vscode/
+*.ipynb
