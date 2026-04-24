@@ -64,6 +64,29 @@ export default function Home({ apiStatus }) {
     }
   };
 
+  const handleFixResult = async (correctLabel) => {
+    setLoading(true);
+    setError(null);
+    setTrainMsg({ type: 'success', text: '🔄 Extracting features to update dataset...' });
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('label', correctLabel);
+      await axios.post(`${API}/predict`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+      
+      setTrainMsg({ type: 'success', text: '✅ Dataset updated! Retraining model...' });
+      const r = await axios.post(`${API}/train`);
+      
+      setTrainMsg({ type: 'success', text: `🎯 Model fixed & retrained! New CV Accuracy: ${(r.data.best_cv_accuracy * 100).toFixed(1)}%` });
+      setResult({...result, label: correctLabel === 1 ? 'FAKE' : 'REAL', confidence: 0.99});
+      setTimeout(() => setTrainMsg(null), 8000);
+    } catch (err) {
+      setTrainMsg({ type: 'error', text: '❌ Failed to correct model: ' + (err.response?.data?.detail || err.message) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setFile(null);
     setResult(null);
@@ -252,7 +275,37 @@ export default function Home({ apiStatus }) {
 
           {/* Result */}
           <AnimatePresence>
-            {result && <ResultCard result={result} />}
+            {result && (
+              <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+                <ResultCard result={result} />
+                
+                {/* Fix Model UI */}
+                <div style={{
+                  marginTop: 16, padding: '16px 20px', borderRadius: 'var(--radius)',
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12, textAlign: 'center' }}>
+                    Did the AI get it wrong? Fix it instantly and retrain the model.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => handleFixResult(0)} disabled={loading} style={{
+                      flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
+                      background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
+                      color: 'var(--real)', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+                    }}>
+                      ✅ Actually, it's REAL
+                    </button>
+                    <button onClick={() => handleFixResult(1)} disabled={loading} style={{
+                      flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
+                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                      color: 'var(--fake)', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+                    }}>
+                      🚫 Actually, it's FAKE
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
